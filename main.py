@@ -1,10 +1,11 @@
 import flet as ft
 import ssh_utils
 
+from ansible_utils import install_tool
+
 
 def main(page: ft.Page):
     page.title = "SSH Hosts Dropdown"
-
 
     hosts = ssh_utils.load_hosts_from_ssh_config()
 
@@ -21,32 +22,37 @@ def main(page: ft.Page):
 
     t = ft.Text()
 
-  
     def on_submit(e):
-        if not domain_input.value.strip():
-            t.value = "Error: Domain field cannot be empty!"
+        if not dropdown.value:
+            t.value = "Error: Please select a host!"
         else:
-            t.value = f"Dropdown value is: {dropdown.value}, Domain: {domain_input.value}"
-        page.update()
+            t.value = "Running Ansible roles on the selected host..."
+            page.update()
 
-   
+            # Run the Ansible roles
+            host = dropdown.value
+            install_tool(host, 'docker')
+            install_tool(host, 'ollama')
+
+            # Update the UI with the results
+            t.value = f"Finished!"
+            page.update()
+
     b = ft.ElevatedButton(text="Submit", on_click=on_submit)
 
-  
     container = ft.Container(
         content=ft.Column(
             controls=[
                 ft.Text("Select SSH Host", size=24, weight="bold"),
-                dropdown,          
-                domain_input,      
-                b,                  
-                t                  
+                dropdown,
+                domain_input,
+                b,
+                t
             ],
             alignment=ft.MainAxisAlignment.CENTER,
         ),
     )
 
-   
     page.add(
         ft.Row(
             controls=[container],
