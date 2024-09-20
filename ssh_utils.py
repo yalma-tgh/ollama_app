@@ -21,5 +21,4 @@ def load_hosts_from_ssh_config():
     
 
 if __name__ == "__main__":
-
-    print(10)  
+    pass
