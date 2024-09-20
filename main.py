@@ -1,30 +1,12 @@
-import os
-import paramiko
 import flet as ft
+import ssh_utils
 
-def load_hosts_from_ssh_config():
-    ssh_config_path = os.path.expanduser("~/.ssh/config")
-    ssh_config = paramiko.SSHConfig()
-
-    try:
-        with open(ssh_config_path, 'r') as file:
-            ssh_config.parse(file)
-
-        hosts = [entry.get('host')[0] for entry in ssh_config._config if entry.get('host') and len(entry.get('config'))]
-        return hosts
-
-    except FileNotFoundError:
-        return ["File not found"]
-    except PermissionError:
-        return ["Permission denied"]
-    except Exception as e:
-        return [f"An error occurred: {e}"]
 
 def main(page: ft.Page):
     page.title = "SSH Hosts Dropdown"
 
-  
-    hosts = load_hosts_from_ssh_config()
+
+    hosts = ssh_utils.load_hosts_from_ssh_config()
 
     dropdown = ft.Dropdown(
         options=[ft.dropdown.Option(host) for host in hosts],
@@ -73,4 +55,4 @@ def main(page: ft.Page):
         )
     )
 
-ft.app(target=main)
+# ft.app(target=main)
