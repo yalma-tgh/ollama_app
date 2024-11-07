@@ -1,0 +1,13 @@
+---
+- name: Run open-webui container
+  docker_container:
+    name: open-webui
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "{{ port }}:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    env:
+      OLLAMA_BASE_URL: http://127.0.0.1:11434
+    network_mode: host
+    restart_policy: always
