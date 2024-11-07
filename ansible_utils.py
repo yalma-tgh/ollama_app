@@ -73,7 +73,7 @@ def install_tool(host, role_name, custom_roles_path=None):
         'ANSIBLE_LOAD_CALLBACK_PLUGINS': 'True',
     }
 
-    r = ansible_runner.run(private_data_dir=base_path, playbook=playbook_name, inventory=inventory_path, envvars=envvars, verbosity=3)
+    r = ansible_runner.run(private_data_dir=base_path, playbook=playbook_name, inventory=inventory_path, envvars=envvars, verbosity=1)
     logging.debug(f"Ansible Runner finished with status: {r.status}")
 
     # Finding the log file in the artifacts directory

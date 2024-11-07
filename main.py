@@ -3,7 +3,8 @@ import flet as ft
 import ssh_utils
 import get_models
 import ansible_utils
-import yaml
+from ruamel.yaml import YAML
+from time import sleep
 
 def main(page: ft.Page):
     page.title = "SSH Hosts Dropdown"
@@ -24,33 +25,44 @@ def main(page: ft.Page):
         label="Select Model"
     )
 
+    port_input = ft.TextField(
+        label="Enter Port",
+        value="3000",
+        width=450
+    )
+
     t = ft.Text()
 
     def on_submit(e):
-        if host_dropdown.value is None or model_dropdown.value is None:
-            t.value = "Error: Please select a host and a model!"
+        if host_dropdown.value is None or model_dropdown.value is None or port_input.value is None:
+            t.value = "Error: Please select a host, a model, and a port!"
             page.update()
         else:
             t.value = "Running Ansible roles on the selected host..."
             page.update()
 
-            # Update the model_name variable in the all.yml file
+            # Update the model_name and port variables in the all.yml file
             model_name = model_dropdown.value.split(':')[0]
+            port = port_input.value
+            yaml = YAML()
             with open('group_vars/all.yml', 'r') as f:
-                data = yaml.safe_load(f)
+                data = yaml.load(f)
             data['model_name'] = model_name
+            data['port'] = port
             with open('group_vars/all.yml', 'w') as f:
-                yaml.safe_dump(data, f)
+                yaml.dump(data, f)
 
             # Run the Ansible roles
             host = host_dropdown.value
             ansible_utils.install_tool(host, 'docker')
             ansible_utils.install_tool(host, 'ollama')
-            ansible_utils.install_tool(host, model_name)
+            ansible_utils.install_tool(host, 'open-webui')
 
             # Update the UI with the results
             t.value = f"Finished!"
             page.update()
+            sleep(5)  # Wait for Ansible roles to complete
+            exit()
 
     b = ft.ElevatedButton(text="Submit", on_click=on_submit)
 
@@ -59,6 +71,7 @@ def main(page: ft.Page):
             controls=[
                 host_dropdown,
                 model_dropdown,
+                port_input,
                 b,
                 t
             ],
