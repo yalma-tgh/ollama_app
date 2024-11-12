@@ -55,7 +55,7 @@ def setup_runner_environment(host, play_source, custom_roles_path=None):
 
     return base_path, 'playbook.yml', inventory_path
 
-def install_tool(host, role_name, custom_roles_path=None):
+def install_tool(host, role_name, custom_roles_path=None, use_local_connection=False):
     play_source = f"""
 ---
 - name: Install and configure {role_name}
@@ -73,7 +73,14 @@ def install_tool(host, role_name, custom_roles_path=None):
         'ANSIBLE_LOAD_CALLBACK_PLUGINS': 'True',
     }
 
-    r = ansible_runner.run(private_data_dir=base_path, playbook=playbook_name, inventory=inventory_path, envvars=envvars, verbosity=1)
+    if use_local_connection:
+        envvars['ANSIBLE_CONNECTION'] = 'local'  # تنظیم برای اجرای لوکال
+
+    r = ansible_runner.run(private_data_dir=base_path,
+                           playbook=playbook_name,
+                           inventory=inventory_path,
+                           envvars=envvars,
+                           verbosity=1)
     logging.debug(f"Ansible Runner finished with status: {r.status}")
 
     # Finding the log file in the artifacts directory

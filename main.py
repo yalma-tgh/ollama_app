@@ -1,4 +1,3 @@
-# main.py
 import flet as ft
 import ssh_utils
 import get_models
@@ -9,7 +8,12 @@ from time import sleep
 def main(page: ft.Page):
     page.title = "SSH Hosts Dropdown"
 
+    # Load hosts from SSH config
     hosts = ssh_utils.load_hosts_from_ssh_config()
+    
+    hosts.insert(0, "localhost")
+
+    # Load models
     models = get_models.get_models()
 
     host_dropdown = ft.Dropdown(
@@ -54,9 +58,15 @@ def main(page: ft.Page):
 
             # Run the Ansible roles
             host = host_dropdown.value
-            ansible_utils.install_tool(host, 'docker')
-            ansible_utils.install_tool(host, 'ollama')
-            ansible_utils.install_tool(host, 'open-webui')
+
+            if host == "localhost":
+                ansible_utils.install_tool("localhost", 'docker', use_local_connection=True)
+                ansible_utils.install_tool("localhost", 'ollama', use_local_connection=True)
+                ansible_utils.install_tool("localhost", 'open-webui', use_local_connection=True)
+            else:
+                ansible_utils.install_tool(host, 'docker')
+                ansible_utils.install_tool(host, 'ollama')
+                ansible_utils.install_tool(host, 'open-webui')
 
             # Update the UI with the results
             t.value = f"Finished!"
