@@ -16,38 +16,28 @@ def setup_runner_environment(host, play_source, custom_roles_path=None):
     os.makedirs(inventory_path, exist_ok=True)
     os.makedirs(group_vars_path, exist_ok=True)
 
+    # ایجاد فایل Playbook
     playbook_path = os.path.join(project_path, 'playbook.yml')
     with open(playbook_path, 'w') as playbook_file:
         playbook_file.write(play_source)
 
+    # کپی کردن نقش‌ها
     roles_src_path = os.path.join(os.path.dirname(__file__), 'roles')
     if os.path.exists(roles_src_path):
         shutil.copytree(roles_src_path, roles_path, dirs_exist_ok=True)
-    else:
-        logging.warning(f"Roles directory does not exist at {roles_src_path}")
 
-    if custom_roles_path and os.path.exists(custom_roles_path):
-        shutil.copytree(custom_roles_path, roles_path, dirs_exist_ok=True)
-    else:
-        if custom_roles_path:
-            logging.warning(f"Custom roles directory does not exist at {custom_roles_path}")
-
+    # کپی کردن group_vars
     group_vars_src_path = os.path.join(os.path.dirname(__file__), 'group_vars')
     if os.path.exists(group_vars_src_path):
         shutil.copytree(group_vars_src_path, group_vars_path, dirs_exist_ok=True)
-    else:
-        logging.warning(f"Group vars directory does not exist at {group_vars_src_path}")
 
+    # تنظیم فایل inventory
     hosts_path = os.path.join(inventory_path, 'hosts')
-    if host:
-        with open(hosts_path, 'w') as hosts_file:
-            if isinstance(host, str):
-                hosts_file.write('[all]\n' + host)
-            else:
-                hosts_file.write('[all]\n' + '\n'.join(host))
-    else:
-        with open(hosts_path, 'w') as hosts_file:
-            hosts_file.write('[all]\nlocalhost')
+    with open(hosts_path, 'w') as hosts_file:
+        if host == "localhost":
+            hosts_file.write('[all]\nlocalhost ansible_connection=local\n')
+        else:
+            hosts_file.write(f'[all]\n{host}\n')
 
     logging.debug("Contents of inventory file:")
     with open(hosts_path, 'r') as file:
@@ -61,6 +51,7 @@ def install_tool(host, role_name, custom_roles_path=None, use_local_connection=F
 - name: Install and configure {role_name}
   hosts: all
   become: true
+  become_method: sudo
   roles:
     - {role_name}
     """
@@ -71,22 +62,24 @@ def install_tool(host, role_name, custom_roles_path=None, use_local_connection=F
     envvars = {
         'ANSIBLE_STDOUT_CALLBACK': 'default',
         'ANSIBLE_LOAD_CALLBACK_PLUGINS': 'True',
+        'ANSIBLE_BECOME_ASK_PASS': 'True',  # درخواست رمز عبور برای sudo
     }
 
     if use_local_connection:
-        envvars['ANSIBLE_CONNECTION'] = 'local'  # تنظیم برای اجرای لوکال
+        envvars['ANSIBLE_CONNECTION'] = 'local'
 
-    r = ansible_runner.run(private_data_dir=base_path,
-                           playbook=playbook_name,
-                           inventory=inventory_path,
-                           envvars=envvars,
-                           verbosity=1)
+    r = ansible_runner.run(
+        private_data_dir=base_path,
+        playbook=playbook_name,
+        inventory=inventory_path,
+        envvars=envvars,
+        verbosity=1
+    )
     logging.debug(f"Ansible Runner finished with status: {r.status}")
 
-    # Finding the log file in the artifacts directory
+    # پیدا کردن فایل‌های لاگ
     log_dir = os.path.join(base_path, 'artifacts')
     logs = "No log file found."
-
     if os.path.exists(log_dir):
         for root, dirs, files in os.walk(log_dir):
             for file in files:
@@ -95,3 +88,10 @@ def install_tool(host, role_name, custom_roles_path=None, use_local_connection=F
                     with open(log_file, 'r') as f:
                         logs = f.read()
                         break
+    else:
+        logging.warning("Log directory does not exist.")
+
+    # پاک کردن دایرکتوری موقت پس از اجرا
+    shutil.rmtree(base_path, ignore_errors=True)
+
+    return logs if logs != "No log file found." else r.status
