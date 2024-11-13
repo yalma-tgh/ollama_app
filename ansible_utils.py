@@ -34,10 +34,16 @@ def setup_runner_environment(host, play_source, custom_roles_path=None):
     # تنظیم فایل inventory
     hosts_path = os.path.join(inventory_path, 'hosts')
     with open(hosts_path, 'w') as hosts_file:
-        if host == "localhost":
-            hosts_file.write('[all]\nlocalhost ansible_connection=local\n')
+        if host:
+            if isinstance(host, str):
+                if host == 'localhost':
+                    hosts_file.write('[all]\nlocalhost ansible_connection=local')
+                else:
+                    hosts_file.write('[all]\n' + host)
+            else:
+                hosts_file.write('[all]\n' + '\n'.join(host))
         else:
-            hosts_file.write(f'[all]\n{host}\n')
+            hosts_file.write('[all]\nlocalhost ansible_connection=local')
 
     logging.debug("Contents of inventory file:")
     with open(hosts_path, 'r') as file:
@@ -45,7 +51,7 @@ def setup_runner_environment(host, play_source, custom_roles_path=None):
 
     return base_path, 'playbook.yml', inventory_path
 
-def install_tool(host, role_name, custom_roles_path=None, use_local_connection=False):
+def install_tool(host, role_name, custom_roles_path=None, use_local_connection=False, password=None):
     play_source = f"""
 ---
 - name: Install and configure {role_name}
@@ -64,6 +70,9 @@ def install_tool(host, role_name, custom_roles_path=None, use_local_connection=F
         'ANSIBLE_LOAD_CALLBACK_PLUGINS': 'True',
         'ANSIBLE_BECOME_ASK_PASS': 'True',  # درخواست رمز عبور برای sudo
     }
+
+    if password is not None:
+        envvars['ANSIBLE_BECOME_PASS'] = password
 
     if use_local_connection:
         envvars['ANSIBLE_CONNECTION'] = 'local'

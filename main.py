@@ -35,6 +35,12 @@ def main(page: ft.Page):
         width=450
     )
 
+    password_input = ft.TextField(
+        label="Enter SSH Password (optional)",
+        password=True,
+        width=450
+    )
+
     t = ft.Text()
 
     def on_submit(e):
@@ -58,15 +64,16 @@ def main(page: ft.Page):
 
             # Run the Ansible roles
             host = host_dropdown.value
+            password = password_input.value  # Retrieve password input
 
             if host == "localhost":
-                ansible_utils.install_tool("localhost", 'docker', use_local_connection=True)
-                ansible_utils.install_tool("localhost", 'ollama', use_local_connection=True)
-                ansible_utils.install_tool("localhost", 'open-webui', use_local_connection=True)
+                ansible_utils.install_tool("localhost", 'docker', use_local_connection=True, password=password)
+                ansible_utils.install_tool("localhost", 'ollama', use_local_connection=True, password=password)
+                ansible_utils.install_tool("localhost", 'open-webui', use_local_connection=True, password=password)
             else:
-                ansible_utils.install_tool(host, 'docker')
-                ansible_utils.install_tool(host, 'ollama')
-                ansible_utils.install_tool(host, 'open-webui')
+                ansible_utils.install_tool(host, 'docker', password=password)
+                ansible_utils.install_tool(host, 'ollama', password=password)
+                ansible_utils.install_tool(host, 'open-webui', password=password)
 
             # Update the UI with the results
             t.value = f"Finished!"
@@ -82,6 +89,7 @@ def main(page: ft.Page):
                 host_dropdown,
                 model_dropdown,
                 port_input,
+                password_input,  # Add password input to the UI
                 b,
                 t
             ],
