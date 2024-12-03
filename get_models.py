@@ -15,7 +15,7 @@ def get_models():
         model = {}
 
         # Extract name
-        name_elem = li.find('h2', class_='truncate text-xl font-medium underline-offset-2 group-hover:underline md:text-2xl')
+        name_elem = li.find('h2', class_='truncate text-xl font-medium underline-offset-2 md:text-2xl')
         if name_elem and name_elem.find('span'):
             model['name'] = name_elem.find('span').text.strip()
 
